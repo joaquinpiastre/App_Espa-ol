@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Hospital Español del Sur Mendocino",
+    "slug": "hesm-app",
+    "scheme": "hesm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "36.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.hesm.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#E6FAFA"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.hesm.app",
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E6FAFA"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e532e6b5-5efe-455c-ace8-262196ca2fcd"
+      }
+    }
+  }
+}

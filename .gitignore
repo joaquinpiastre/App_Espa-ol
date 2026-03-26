@@ -1,0 +1,48 @@
+## Dependencies
+node_modules/
+
+## Expo
+.expo/
+dist/
+web-build/
+
+## Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+## OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+## Environment
+.env
+.env.*
+
+## Android (Gradle / builds)
+android/local.properties
+android/.gradle/
+android/app/build/
+android/build/
+android/.cxx/
+android/app/.cxx/
+android/app/.externalNativeBuild/
+android/app/src/**/assets/
+android/app/src/**/res/raw/
+
+## iOS
+ios/Pods/
+ios/build/
+*.xcworkspace
+
+## Metro / Watchman
+.watchmanconfig
+
+## Expo prebuild outputs (si se usan)
+android/.settings/
+
+## Generated data (opcional: si querés commitearlo, borrá estas líneas)
+# src/data/socios.json
+# src/data/cartillaProfessionals.generated.json
