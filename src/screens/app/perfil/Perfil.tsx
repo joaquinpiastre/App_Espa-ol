@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Alert, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import { LogOut, Mail, Phone, ShieldCheck } from "lucide-react-native";
+import { CreditCard, LogIn, LogOut, Mail, MessageCircle, Phone, ShieldCheck, UserRound } from "lucide-react-native";
 
 import { Screen } from "../../../components/app/Screen";
 import { Card } from "../../../components/ui/Card";
@@ -13,19 +13,21 @@ import { useCurrentUser, useAuthStore } from "../../../state/useAuthStore";
 import { HESM_CONFIG, APP_CONFIG } from "../../../constants/appConfig";
 import { useHesmContacts } from "../../../state/useHesmRemoteStore";
 import { InfoRow } from "../../../components/ui/InfoRow";
-import { makeMapsUrl, makeTelUrl, openUrl } from "../../../utils/links";
+import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, openUrl } from "../../../utils/links";
 
 export function Perfil() {
   const router = useRouter();
   const user = useCurrentUser();
   const signOut = useAuthStore((s) => s.signOut);
-  const { phonePrincipal, phoneForTel } = useHesmContacts();
+  const { phonePrincipal, phoneForTel, whatsappNumber } = useHesmContacts();
 
   const [notifications, setNotifications] = useState(true);
   const appVersion = useMemo(() => {
     // En managed es común que esté en expoConfig.version
     return Constants.expoConfig?.version ?? "1.0.0";
   }, []);
+
+  const isInvitado = user?.role === "invitado";
 
   const credencial = useMemo(() => {
     if (user?.nroSocioDisplay) return `Socio ${user.nroSocioDisplay}`;
@@ -44,6 +46,11 @@ export function Perfil() {
     return v;
   }, [user?.ctasDebe]);
 
+  /** Referencia visible para que el socio lo escriba a mano en Mercado Pago cuando se lo pidan */
+  const numeroSocioParaPago = useMemo(() => {
+    return user?.nroSocioDisplay ?? user?.nroSocio ?? null;
+  }, [user?.nroSocio, user?.nroSocioDisplay]);
+
   async function onLogout() {
     Alert.alert("Cerrar sesión", "¿Querés salir de la app en este dispositivo?", [
       { text: "Cancelar", style: "cancel" },
@@ -58,62 +65,186 @@ export function Perfil() {
     ]);
   }
 
+  async function goToSocioLogin() {
+    await signOut();
+    router.replace("/(auth)/login");
+  }
+
+  async function onHacermeSocioWhatsApp() {
+    const opened = await openUrl(makeWhatsAppUrl(whatsappNumber, APP_CONFIG.guestBecomeMemberWhatsAppMessage));
+    if (!opened) {
+      Alert.alert("WhatsApp", "No se pudo abrir WhatsApp. Verificá que esté instalado o probá más tarde.");
+    }
+  }
+
+  async function onPagarCuota() {
+    const url = HESM_CONFIG.mercadoPagoCuotaUrl?.trim() ?? "";
+    if (!url) {
+      Alert.alert(
+        "Enlace de pago",
+        "Pedile al equipo que cargue la URL de Mercado Pago en src/constants/appConfig.ts (campo mercadoPagoCuotaUrl)."
+      );
+      return;
+    }
+    const opened = await openUrl(url);
+    if (!opened) {
+      Alert.alert("No se pudo abrir el enlace", "Verificá tu conexión o probá desde el navegador.");
+    }
+  }
+
   return (
     <Screen preset="scroll" contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xl }}>
       <SectionTitle
         kicker="MI CUENTA"
         title="Perfil"
-        subtitle="Datos de socio y preferencias del dispositivo."
+        subtitle={
+          isInvitado
+            ? "Modo invitado: sin credencial de socio. Datos personales solo al iniciar sesión como socio."
+            : "Datos de socio y preferencias del dispositivo."
+        }
       />
 
       <Card style={{ padding: theme.spacing.xl, gap: theme.spacing.lg }}>
-        <View
-          style={{
-            padding: theme.spacing.lg,
-            borderRadius: theme.radii.lg,
-            backgroundColor: theme.colors.primarySoft,
-            borderWidth: 1,
-            borderColor: theme.colors.primaryBorderMuted,
-            gap: theme.spacing.sm,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
-            <View
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: theme.radii.md,
-                backgroundColor: theme.colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ShieldCheck size={22} color="#fff" strokeWidth={2.2} />
+        {isInvitado ? (
+          <View
+            style={{
+              padding: theme.spacing.lg,
+              borderRadius: theme.radii.lg,
+              backgroundColor: theme.colors.primarySoft,
+              borderWidth: 1,
+              borderColor: theme.colors.primaryBorderMuted,
+              gap: theme.spacing.md,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: theme.radii.md,
+                  backgroundColor: theme.colors.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <UserRound size={22} color="#fff" strokeWidth={2.2} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...theme.typography.h2, color: theme.colors.primaryDark }}>Invitado</Text>
+                <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
+                  Información institucional y contactos del hospital. Cartilla médica, farmacias, novedades y emergencias/guardia están disponibles al iniciar sesión como socio.
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...theme.typography.h2, color: theme.colors.primaryDark }}>
-                {user?.displayName ?? "Usuario"}
-              </Text>
+            <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
+              Los turnos con credencial de socio y tu ficha personal en esta pantalla aparecen cuando ingresás con DNI y
+              número de socio.
+            </Text>
+
+            <View style={{ gap: theme.spacing.sm }}>
+              <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>Hacerme socio</Text>
               <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
-                DNI {user?.emailOrDni ?? "—"}
+                Escribinos por WhatsApp al hospital para consultar cómo asociarte, requisitos y documentación.
               </Text>
+              <Button
+                title="Consultar por WhatsApp para hacerme socio"
+                variant="secondary"
+                size="lg"
+                onPress={onHacermeSocioWhatsApp}
+                iconLeft={<MessageCircle size={18} color={theme.colors.primaryDark} strokeWidth={2.2} />}
+              />
+            </View>
+
+            <Button
+              title="Ya soy socio — iniciar sesión"
+              variant="primary"
+              size="lg"
+              onPress={goToSocioLogin}
+              iconLeft={<LogIn size={18} color="#fff" strokeWidth={2.2} />}
+            />
+          </View>
+        ) : (
+          <View
+            style={{
+              padding: theme.spacing.lg,
+              borderRadius: theme.radii.lg,
+              backgroundColor: theme.colors.primarySoft,
+              borderWidth: 1,
+              borderColor: theme.colors.primaryBorderMuted,
+              gap: theme.spacing.sm,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: theme.radii.md,
+                  backgroundColor: theme.colors.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ShieldCheck size={22} color="#fff" strokeWidth={2.2} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...theme.typography.h2, color: theme.colors.primaryDark }}>
+                  {user?.displayName ?? "Usuario"}
+                </Text>
+                <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
+                  DNI {user?.emailOrDni ?? "—"}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={{ ...theme.typography.small, color: theme.colors.primaryDark, fontWeight: "900" }}>
+              {credencial}
+            </Text>
+
+            {user?.plan ? <InfoRow label="Plan" value={user.plan} /> : null}
+
+            {user?.domicilio ? <InfoRow label="Domicilio" value={user.domicilio} /> : null}
+
+            <InfoRow label="Cuotas adeudadas (CTAS_DEBE)" value={cuotasAdeudadasTexto} />
+
+            <View style={{ gap: theme.spacing.md, marginTop: theme.spacing.md }}>
+              <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>Pagar cuotas</Text>
+              <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
+                El mismo enlace lleva a todos los socios al flujo de Mercado Pago del hospital; cada persona completa ahí los
+                datos que pida la página (por ejemplo número de socio, sesión en MP o datos del titular). Lo que ves abajo son
+                referencias desde tu cuenta en la app para copiar o tener a mano.
+              </Text>
+
+              <View
+                style={{
+                  padding: theme.spacing.lg,
+                  borderRadius: theme.radii.md,
+                  borderWidth: 1,
+                  borderColor: theme.colors.primaryBorderMuted,
+                  backgroundColor: theme.colors.surface,
+                  gap: theme.spacing.xs,
+                }}
+              >
+                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, fontWeight: "800" }}>
+                  Referencias de tu cuenta (para lo que pida Mercado Pago)
+                </Text>
+                <InfoRow label="N° de socio" value={numeroSocioParaPago ?? "—"} />
+                <InfoRow label="DNI" value={user?.emailOrDni ? user.emailOrDni : "—"} />
+                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                  Mercado Pago puede pedirte distintos pasos según la configuración; usá estos datos cuando corresponda.
+                </Text>
+              </View>
+
+              <Button
+                title="Ir a pagar con Mercado Pago"
+                variant="primary"
+                size="lg"
+                onPress={onPagarCuota}
+                iconLeft={<CreditCard size={18} color="#fff" strokeWidth={2.2} />}
+              />
             </View>
           </View>
-
-          <Text style={{ ...theme.typography.small, color: theme.colors.primaryDark, fontWeight: "900" }}>
-            {credencial}
-          </Text>
-
-          {user?.plan ? (
-            <InfoRow label="Plan" value={user.plan} />
-          ) : null}
-
-          {user?.domicilio ? (
-            <InfoRow label="Domicilio" value={user.domicilio} />
-          ) : null}
-
-          <InfoRow label="Cuotas adeudadas (CTAS_DEBE)" value={cuotasAdeudadasTexto} />
-        </View>
+        )}
 
         <View style={{ gap: theme.spacing.md }}>
           <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>

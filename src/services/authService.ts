@@ -30,6 +30,7 @@ export async function loginSocios(params: {
 
   const user: AuthUser = {
     id: `socio_${socio.dniNorm}_${socio.nroSocioNorm}`,
+    role: "socio",
     displayName: toTitleCaseName(socio.nombre),
     emailOrDni: socio.dniNorm,
     nroSocio: socio.nroSocioNorm,
@@ -42,6 +43,18 @@ export async function loginSocios(params: {
   return { user };
 }
 
+/** Acceso sin credencial: funciones institucionales limitadas */
+export async function loginInvitado(): Promise<{ user: AuthUser }> {
+  await sleep(280);
+  const user: AuthUser = {
+    id: "hesm_invitado",
+    role: "invitado",
+    displayName: "Invitado",
+    emailOrDni: "",
+  };
+  return { user };
+}
+
 /** Nombre legible: primera letra de cada palabra en mayúscula */
 function toTitleCaseName(name: string) {
   return name
@@ -50,14 +63,4 @@ function toTitleCaseName(name: string) {
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-export async function requestRecoveryMock(params: {
-  emailOrDni: string;
-}): Promise<{ ok: true }> {
-  await sleep(750);
-  const t = params.emailOrDni.trim();
-  if (!t) throw new Error("Ingresá tu DNI.");
-  if (!normalizeDniInput(t)) throw new Error("Ingresá un DNI válido.");
-  return { ok: true };
 }

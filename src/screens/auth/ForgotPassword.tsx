@@ -1,9 +1,7 @@
-import React, { useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Screen } from "../../components/app/Screen";
 import { Card } from "../../components/ui/Card";
@@ -11,47 +9,53 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { theme } from "../../theme/theme";
-import { requestRecoveryMock } from "../../services/authService";
-import { normalizeDniInput } from "../../data/sociosLookup";
+import { findSocioByDni, normalizeDniInput } from "../../data/sociosLookup";
 
-const schema = z.object({
-  dni: z
-    .string()
-    .min(1, "Ingresá tu DNI.")
-    .refine((v) => normalizeDniInput(v) != null, "Ingresá un DNI válido."),
-});
+type FormValues = { dni: string };
 
-type FormValues = z.infer<typeof schema>;
+type LookupState =
+  | { kind: "empty" }
+  | { kind: "typing" }
+  | { kind: "notFound" }
+  | { kind: "found"; nroSocioDisplay: string; nombre: string };
 
 export function ForgotPassword() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [lookup, setLookup] = useState<LookupState>({ kind: "empty" });
 
-  const { control, handleSubmit, formState } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const { control } = useForm<FormValues>({
     defaultValues: { dni: "" },
   });
 
-  async function onSubmit(values: FormValues) {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await requestRecoveryMock({ emailOrDni: values.dni });
-      setSuccess(
-        "Si tu DNI está registrado, en producción recibirías instrucciones por el canal oficial del hospital (simulación)."
-      );
-      Alert.alert("Listo", "Solicitud registrada (simulación). Contactá al hospital para recuperar tu número de socio.");
-    } catch (e: any) {
-      const message = e?.message ?? "No se pudo iniciar la recuperación. Intentá nuevamente.";
-      setError(message);
-      Alert.alert("Error", message);
-    } finally {
-      setLoading(false);
+  const dniValue = useWatch({ control, name: "dni" });
+
+  useEffect(() => {
+    const raw = dniValue?.trim() ?? "";
+    if (!raw) {
+      setLookup({ kind: "empty" });
+      return;
     }
-  }
+
+    const t = setTimeout(() => {
+      const norm = normalizeDniInput(raw);
+      if (!norm) {
+        setLookup({ kind: "typing" });
+        return;
+      }
+      const socio = findSocioByDni(raw);
+      if (socio) {
+        setLookup({
+          kind: "found",
+          nroSocioDisplay: socio.nroSocioDisplay,
+          nombre: socio.nombre,
+        });
+      } else {
+        setLookup({ kind: "notFound" });
+      }
+    }, 350);
+
+    return () => clearTimeout(t);
+  }, [dniValue]);
 
   return (
     <Screen preset="scroll" contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xl }}>
@@ -59,7 +63,7 @@ export function ForgotPassword() {
         <SectionTitle
           kicker="AYUDA"
           title="Recuperar acceso"
-          subtitle="Para recuperar tu número de socio, contactá a administración o usá este formulario de prueba."
+          subtitle="Ingresá tu DNI: si figura en el padrón de la app, te mostraremos tu número de socio para poder iniciar sesión."
         />
 
         <Card style={{ padding: theme.spacing.xl, gap: theme.spacing.lg }}>
@@ -74,28 +78,45 @@ export function ForgotPassword() {
                 onChangeText={onChange}
                 onBlur={onBlur}
                 keyboardType="numeric"
-                error={formState.errors.dni?.message}
               />
             )}
           />
 
-          {success ? (
+          {lookup.kind === "found" ? (
             <View
               style={{
-                padding: theme.spacing.md,
+                padding: theme.spacing.lg,
                 borderRadius: theme.radii.md,
                 borderWidth: 1,
                 borderColor: theme.colors.success,
                 backgroundColor: theme.colors.successSoft,
+                gap: theme.spacing.sm,
               }}
             >
-              <Text style={{ color: theme.colors.primaryDark, fontWeight: "800", fontSize: 14 }}>
-                {success}
+              <Text style={{ color: theme.colors.primaryDark, fontSize: 13, opacity: 0.85 }}>
+                Número de socio asociado a tu DNI
+              </Text>
+              <Text
+                selectable
+                style={{
+                  color: theme.colors.primaryDark,
+                  fontWeight: "900",
+                  fontSize: 28,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {lookup.nroSocioDisplay}
+              </Text>
+              <Text style={{ color: theme.colors.primaryDark, fontSize: 14 }}>
+                {lookup.nombre}
+              </Text>
+              <Text style={{ color: theme.colors.primaryDark, fontSize: 12, opacity: 0.8 }}>
+                Usá este número junto con tu DNI en la pantalla de inicio de sesión.
               </Text>
             </View>
           ) : null}
 
-          {error ? (
+          {lookup.kind === "notFound" ? (
             <View
               style={{
                 padding: theme.spacing.md,
@@ -106,22 +127,19 @@ export function ForgotPassword() {
               }}
             >
               <Text style={{ color: theme.colors.danger, fontWeight: "800", fontSize: 14 }}>
-                {error}
+                No encontramos un socio con ese DNI en los datos actuales de la app. Verificá el número o
+                contactá a administración del hospital.
               </Text>
             </View>
           ) : null}
 
-          <Button
-            title={loading ? "Enviando..." : "Enviar solicitud"}
-            loading={loading}
-            disabled={loading}
-            onPress={handleSubmit(onSubmit)}
-            size="lg"
-          />
+          {lookup.kind === "typing" && (dniValue?.trim().length ?? 0) > 0 ? (
+            <Text style={{ color: theme.colors.primaryDark, fontSize: 13, opacity: 0.75 }}>
+              Completá un DNI válido (6 a 10 dígitos) para consultar.
+            </Text>
+          ) : null}
 
-          <Pressable onPress={() => router.replace("/(auth)/login")} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-            <Text style={{ color: theme.colors.primaryDark, fontWeight: "800" }}>Volver al inicio de sesión</Text>
-          </Pressable>
+          <Button title="Volver al inicio de sesión" onPress={() => router.replace("/(auth)/login")} size="lg" variant="secondary" />
         </Card>
       </View>
     </Screen>

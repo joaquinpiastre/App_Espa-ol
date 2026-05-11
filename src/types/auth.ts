@@ -1,5 +1,9 @@
+export type AuthUserRole = "socio" | "invitado";
+
 export type AuthUser = {
   id: string;
+  /** Socios: datos completos. Invitados: acceso limitado sin credencial. */
+  role?: AuthUserRole;
   /** Nombre y apellido según base de socios */
   displayName: string;
   /** DNI (solo dígitos normalizados, para mostrar en perfil) */

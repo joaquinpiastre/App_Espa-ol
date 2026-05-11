@@ -1,5 +1,5 @@
-import React from "react";
-import { Text, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { Alert, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -9,9 +9,10 @@ import {
   CalendarCheck,
   ShieldAlert,
   Stethoscope,
-  Handshake,
-  Building2,
+  CreditCard,
+  Pill,
   Network,
+  MessageCircle,
 } from "lucide-react-native";
 
 import { Screen } from "../../components/app/Screen";
@@ -24,68 +25,75 @@ import { novedadesMock } from "../../mock-data/novedades";
 import { useCurrentUser } from "../../state/useAuthStore";
 import { HESM_CONFIG, APP_CONFIG } from "../../constants/appConfig";
 import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, makeEmailUrl, openUrl } from "../../utils/links";
-import { useCartillaData } from "../../hooks/useCartillaData";
 import { useHesmContacts } from "../../state/useHesmRemoteStore";
 
 export function Inicio() {
   const router = useRouter();
   const user = useCurrentUser();
-  const { specialties } = useCartillaData();
   const { whatsappNumber, phoneForTel } = useHesmContacts();
 
-  const quickGrid = [
-    {
-      label: "Cartilla médica",
-      icon: <Stethoscope size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
-      onPress: () => router.push("/cartilla"),
-      subtitle: "Profesionales y especialidades",
-    },
-    {
+  const isInvitado = user?.role === "invitado";
+
+  const onHacermeSocioWhatsApp = useCallback(async () => {
+    const ok = await openUrl(makeWhatsAppUrl(whatsappNumber, APP_CONFIG.guestBecomeMemberWhatsAppMessage));
+    if (!ok) {
+      Alert.alert("WhatsApp", "No se pudo abrir WhatsApp. Verificá que esté instalado.");
+    }
+  }, [whatsappNumber]);
+
+  const quickGrid = useMemo(() => {
+    const emergenciasItem = {
       label: "Emergencias",
       icon: <ShieldAlert size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
       onPress: () => router.push("/emergencias"),
       subtitle: "Guardia 24 hs y orientación",
-    },
-    {
-      label: "Prestadores",
-      icon: <Handshake size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
-      onPress: () => router.push("/prestadores"),
-      subtitle: "Coberturas y contacto",
-    },
-    {
-      label: "Consultorios externos",
-      icon: <Building2 size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
-      onPress: () => router.push("/consultorios-externos"),
-      subtitle: "Listado y horarios",
-    },
-    {
-      label: "Laboratorios externos",
-      icon: <Network size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
-      onPress: () => router.push("/laboratorios-externos"),
-      subtitle: "Turnos y contactos",
-    },
-    {
+    };
+    const cartillaItem = {
+      label: "Cartilla médica",
+      icon: <Stethoscope size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
+      onPress: () => router.push("/cartilla"),
+      subtitle: "Profesionales y especialidades",
+    };
+    const farmaciasItem = {
+      label: "Farmacias",
+      icon: <Pill size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
+      onPress: () => router.push("/farmacias"),
+      subtitle: "Convenios y beneficios",
+    };
+    const redesItem = {
       label: "Redes sociales",
       icon: <Network size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
       onPress: () => router.push("/redes-sociales"),
       subtitle: "Instagram, Facebook y sitio",
-    },
-  ];
+    };
+    if (isInvitado) {
+      const hacermeSocio = {
+        label: "Hacerme socio",
+        icon: <MessageCircle size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
+        onPress: onHacermeSocioWhatsApp,
+        subtitle: "Consultá al hospital por WhatsApp",
+      };
+      return [redesItem, hacermeSocio];
+    }
+    return [emergenciasItem, cartillaItem, farmaciasItem, redesItem];
+  }, [isInvitado, router, onHacermeSocioWhatsApp]);
 
-  const featured = [
-    {
+  const featured = useMemo(() => {
+    const guardia = {
       label: "Guardia 24 hs",
       icon: <ShieldAlert size={22} color="#fff" strokeWidth={2.2} />,
       onPress: () => router.push("/emergencias"),
       variant: "primary" as const,
-    },
-    {
-      label: "Turnos por WhatsApp",
+    };
+    const turnos = {
+      label: "Turnos",
       icon: <CalendarCheck size={22} color="#fff" strokeWidth={2.2} />,
       onPress: () => router.push("/turnos"),
       variant: "primary" as const,
-    },
-  ];
+    };
+    if (isInvitado) return [];
+    return [guardia, turnos];
+  }, [isInvitado, router]);
 
   return (
     <Screen preset="scroll" contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xxl }}>
@@ -97,9 +105,44 @@ export function Inicio() {
           Hola{user?.displayName ? `, ${user.displayName}` : ""}.
         </Text>
         <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted, lineHeight: 22 }}>
-          {APP_CONFIG.loginMessage}
+          {isInvitado ? APP_CONFIG.guestHomeMessage : APP_CONFIG.socioHomeMessage}
         </Text>
       </View>
+
+      {!isInvitado ? (
+        <View style={{ gap: theme.spacing.md }}>
+          <Button
+            title="Pagar cuota"
+            onPress={() => void openUrl(HESM_CONFIG.mercadoPagoCuotaUrl)}
+            size="lg"
+            variant="primary"
+            iconLeft={<CreditCard size={20} color="#fff" strokeWidth={2.2} />}
+          />
+        </View>
+      ) : null}
+
+      {!isInvitado && featured.length > 0 ? (
+        <View style={{ gap: theme.spacing.md }}>
+          <SectionTitle
+            kicker="PRIORITARIO"
+            title="Emergencias y guardia"
+            subtitle="Lo primero en urgencias; también podés gestionar turnos con tu credencial de socio."
+          />
+          <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
+            {featured.map((item) => (
+              <View key={item.label} style={{ flex: 1 }}>
+                <Button
+                  title={item.label}
+                  onPress={item.onPress}
+                  size="lg"
+                  variant={item.variant}
+                  iconLeft={item.icon}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <LinearGradient
@@ -124,8 +167,9 @@ export function Inicio() {
             <View style={{ flex: 1, gap: theme.spacing.sm }}>
               <Text style={{ ...theme.typography.h2, color: theme.colors.text }}>Hospital Español</Text>
               <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
-                Cartilla y orientación para servicios del hospital. Especialidades en cartilla:{" "}
-                {specialties.length}.
+                {isInvitado
+                  ? "Información institucional y contactos del hospital. Cartilla médica, farmacias y beneficios de socio están disponibles al iniciar sesión con tu credencial."
+                  : "Cartilla médica, contactos y orientación para los servicios del hospital, disponibles desde los accesos rápidos."}
               </Text>
             </View>
             <LinearGradient
@@ -155,7 +199,9 @@ export function Inicio() {
         <SectionTitle
           kicker="NAVEGACIÓN"
           title="Accesos rápidos"
-          subtitle="Lo esencial, a pocos toques."
+          subtitle={
+            isInvitado ? "Redes sociales y cómo consultar por WhatsApp para asociarte." : "Emergencias primero; después cartilla, farmacias y redes."
+          }
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md }}>
           {quickGrid.map((item) => (
@@ -171,41 +217,22 @@ export function Inicio() {
         </View>
       </View>
 
-      <View style={{ gap: theme.spacing.md }}>
-        <SectionTitle
-          kicker="PRIORITARIO"
-          title="Atención inmediata"
-          subtitle="Urgencias y solicitud de turnos por WhatsApp."
-        />
-        <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
-          {featured.map((item) => (
-            <View key={item.label} style={{ flex: 1 }}>
-              <Button
-                title={item.label}
-                onPress={item.onPress}
-                size="lg"
-                variant={item.variant}
-                iconLeft={item.icon}
-              />
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={{ gap: theme.spacing.md }}>
-        <SectionTitle kicker="INFO" title="Novedades" subtitle="Información institucional (datos de ejemplo)." />
+      {!isInvitado ? (
         <View style={{ gap: theme.spacing.md }}>
-          {novedadesMock.map((n) => (
-            <Card key={n.id} style={{ padding: theme.spacing.lg, gap: theme.spacing.sm }}>
-              <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>{n.titulo}</Text>
-              <Text style={{ ...theme.typography.small, color: theme.colors.primaryDark, fontWeight: "800" }}>
-                {n.fecha}
-              </Text>
-              <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>{n.resumen}</Text>
-            </Card>
-          ))}
+          <SectionTitle kicker="INFO" title="Novedades" subtitle="Información institucional (datos de ejemplo)." />
+          <View style={{ gap: theme.spacing.md }}>
+            {novedadesMock.map((n) => (
+              <Card key={n.id} style={{ padding: theme.spacing.lg, gap: theme.spacing.sm }}>
+                <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>{n.titulo}</Text>
+                <Text style={{ ...theme.typography.small, color: theme.colors.primaryDark, fontWeight: "800" }}>
+                  {n.fecha}
+                </Text>
+                <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>{n.resumen}</Text>
+              </Card>
+            ))}
+          </View>
         </View>
-      </View>
+      ) : null}
 
       <View style={{ gap: theme.spacing.md, paddingBottom: theme.spacing.xl }}>
         <SectionTitle kicker="CONTACTO" title="Contactos rápidos" subtitle="Llamá, escribí o llegá sin perderte." />
@@ -252,7 +279,9 @@ export function Inicio() {
           </View>
 
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: theme.spacing.sm }}>
-            {HESM_CONFIG.guardiaLabel}. Atención de urgencias y orientación.
+            {isInvitado
+              ? "Consultas generales y coordenadas por estos medios."
+              : `${HESM_CONFIG.guardiaLabel}. Atención de urgencias y orientación.`}
           </Text>
         </Card>
       </View>

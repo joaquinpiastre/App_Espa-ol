@@ -26,6 +26,13 @@ export function findSocioByCredentials(dniInput: string, socioInput: string): So
   );
 }
 
+/** Primer socio que coincide con el DNI normalizado (misma lógica que el login). */
+export function findSocioByDni(dniInput: string): SocioRecord | null {
+  const dni = normalizeDniInput(dniInput);
+  if (!dni) return null;
+  return payload.records.find((r) => r.dniNorm === dni) ?? null;
+}
+
 export function getSociosCount(): number {
   return payload.records.length;
 }

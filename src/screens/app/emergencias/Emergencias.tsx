@@ -21,6 +21,7 @@ export function Emergencias() {
   const syncFromWeb = useHesmRemoteStore((s) => s.syncFromWeb);
 
   const telUrl = makeTelUrl(phoneForTel);
+  const sanRafaelEmergenciasTelUrl = makeTelUrl(HESM_CONFIG.sanRafaelEmergenciasTel);
   const mapsUrl = makeMapsUrl(HESM_CONFIG.address);
   const whatsAppUrl = makeWhatsAppUrl(
     whatsappNumber,
@@ -79,6 +80,11 @@ export function Emergencias() {
           </View>
 
           <InfoRow label="Teléfono" value={phonePrincipal} icon={<Phone size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />} />
+          <InfoRow
+            label="Emergencias San Rafael"
+            value={HESM_CONFIG.sanRafaelEmergenciasDisplay}
+            icon={<Phone size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />}
+          />
           <InfoRow label="Dirección" value={HESM_CONFIG.address} icon={<MapPin size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />} />
           <InfoRow label="Email" value={HESM_CONFIG.email} icon={<Mail size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />} />
 
@@ -113,7 +119,7 @@ export function Emergencias() {
               "Mantené la calma y asegurá el acceso al lugar (puertas, documentos y datos de contacto).",
               "Si corresponde, indicá síntomas, inicio aproximado y antecedentes relevantes.",
               "No demores la atención si hay signos de gravedad. En caso de riesgo vital, buscá ayuda inmediata.",
-              "Evitá automedicarte salvo indicación médica.",
+              "Evitá medicarte salvo indicación médica.",
               "Para orientación de turnos y consultas no urgentes, podés escribir por WhatsApp.",
             ].map((txt, idx) => (
               <Text key={idx} style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
@@ -139,11 +145,20 @@ export function Emergencias() {
             </View>
             <View style={{ flex: 1, minWidth: 170 }}>
               <Button
-                title="Turnos por WhatsApp"
+                title="Turnos"
                 variant="secondary"
                 size="lg"
                 iconLeft={<Phone size={18} color={theme.colors.primaryDark} strokeWidth={2.2} />}
                 onPress={() => router.push("/turnos")}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 170 }}>
+              <Button
+                title="Emergencias San Rafael"
+                variant="secondary"
+                size="lg"
+                iconLeft={<Phone size={18} color={theme.colors.primaryDark} strokeWidth={2.2} />}
+                onPress={() => openUrl(sanRafaelEmergenciasTelUrl)}
               />
             </View>
           </View>

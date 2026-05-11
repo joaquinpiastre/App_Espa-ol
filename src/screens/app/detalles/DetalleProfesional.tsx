@@ -12,12 +12,14 @@ import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, openUrl } from "../../../util
 import { HESM_CONFIG } from "../../../constants/appConfig";
 import { useCartillaData } from "../../../hooks/useCartillaData";
 import { useHesmContacts } from "../../../state/useHesmRemoteStore";
+import { useCurrentUser } from "../../../state/useAuthStore";
 
 export function DetalleProfesional() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { professionals } = useCartillaData();
   const { whatsappNumber, phoneForTel } = useHesmContacts();
+  const user = useCurrentUser();
   const professional = professionals.find((p) => p.id === params.id);
 
   if (!professional) {
@@ -35,10 +37,27 @@ export function DetalleProfesional() {
     );
   }
 
-  const whatsappUrl = makeWhatsAppUrl(
-    whatsappNumber,
-    `Hola, quiero solicitar turno para ${professional.specialty} con ${professional.name}. ¿Podrían indicarme disponibilidad?`
-  );
+  const nombre = user?.displayName ?? "";
+  const dni = user?.emailOrDni ?? "";
+
+  // WhatsApp respeta saltos de línea dentro del texto.
+  const lineas: string[] = [
+    `Hola, quiero solicitar turno para ${professional.specialty} con ${professional.name}.`,
+  ];
+  const normalize = (v: string) =>
+    v
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+  // Evita repetir el mismo nombre si coincide con el profesional.
+  if (nombre && normalize(nombre) !== normalize(professional.name)) lineas.push(`Nombre: ${nombre}`);
+  if (dni) lineas.push(`DNI: ${dni}`);
+  lineas.push("¿Podrían indicarme disponibilidad?");
+
+  const mensaje = lineas.join("\n");
+
+  const whatsappUrl = makeWhatsAppUrl(whatsappNumber, mensaje);
   const telUrl = makeTelUrl(phoneForTel);
 
   return (

@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HESM_CONFIG, APP_CONFIG, HESM_REMOTE_ASSETS } from "../../constants/appConfig";
 import { useAuthStore } from "../../state/useAuthStore";
-import { loginSocios } from "../../services/authService";
+import { loginInvitado, loginSocios } from "../../services/authService";
 import { normalizeDniInput, normalizeSocioInput } from "../../data/sociosLookup";
 import { theme } from "../../theme/theme";
 import { Card } from "../../components/ui/Card";
@@ -48,6 +48,7 @@ export function Login() {
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(false);
+  const [loadingGuest, setLoadingGuest] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const heroHeight = HERO_BASE_H + insets.top;
@@ -86,6 +87,21 @@ export function Login() {
       Alert.alert("Ingreso no disponible", e?.message ?? "Intentá nuevamente.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onGuestPress() {
+    setFormError(null);
+    setLoadingGuest(true);
+    try {
+      const { user } = await loginInvitado();
+      await signIn(user, false);
+      router.replace("/(tabs)/inicio");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "No se pudo continuar como invitado.";
+      setFormError(msg);
+    } finally {
+      setLoadingGuest(false);
     }
   }
 
@@ -163,11 +179,11 @@ export function Login() {
           <Card style={styles.formCard}>
             <View style={{ gap: theme.spacing.xs }}>
               <Text style={{ ...theme.typography.overline, color: theme.colors.primaryDark }}>
-                ACCESO PACIENTES
+                SOCIOS E INVITADOS
               </Text>
               <Text style={{ ...theme.typography.h2, color: theme.colors.text }}>Iniciar sesión</Text>
               <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
-                {APP_CONFIG.loginMessage}
+                Socios: DNI y número de socio. Sin credencial: Continuar como invitado más abajo.
               </Text>
             </View>
 
@@ -231,39 +247,37 @@ export function Login() {
             ) : null}
 
             <Button
-              title={loading ? "Ingresando..." : "Ingresar"}
+              title={loading ? "Ingresando..." : "Ingresar como socio"}
               loading={loading}
-              disabled={loading}
+              disabled={loading || loadingGuest}
               onPress={handleSubmit(onSubmit)}
               size="lg"
             />
 
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: theme.spacing.md,
-                flexWrap: "wrap",
-              }}
-            >
+            <View style={{ gap: theme.spacing.sm }}>
+              <Button
+                title={loadingGuest ? "Abriendo..." : APP_CONFIG.guestLoginButton}
+                variant="secondary"
+                loading={loadingGuest}
+                disabled={loading || loadingGuest}
+                onPress={onGuestPress}
+                size="lg"
+              />
+              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, textAlign: "center" }}>
+                {APP_CONFIG.guestLoginSubtitle}
+              </Text>
+            </View>
+
+            <View style={{ gap: theme.spacing.md, alignItems: "center" }}>
               <Pressable
                 onPress={() => router.push("/(auth)/forgot-password")}
                 style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
               >
-                <Text style={{ color: theme.colors.brandNavy, fontWeight: "800", fontSize: 15 }}>
-                  Recuperar acceso
+                <Text style={{ color: theme.colors.brandNavy, fontWeight: "800", fontSize: 14, textAlign: "center" }}>
+                  {APP_CONFIG.socioRecoveryLink}
                 </Text>
               </Pressable>
-              <Text
-                style={{
-                  color: theme.colors.textMuted,
-                  fontWeight: "600",
-                  fontSize: 12,
-                  flexShrink: 1,
-                }}
-                numberOfLines={2}
-              >
+              <Text style={{ color: theme.colors.textMuted, fontWeight: "600", fontSize: 12, textAlign: "center" }}>
                 {HESM_CONFIG.email}
               </Text>
             </View>

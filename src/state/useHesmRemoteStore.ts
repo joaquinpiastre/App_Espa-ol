@@ -7,7 +7,9 @@ import { STORAGE_KEYS } from "../constants/storageKeys";
 import type { HesmParsedRecord } from "../services/hesmCatalogParser";
 import { syncHesmFromPublicWeb } from "../services/hesmRemoteSync";
 
-const STALE_MS = 6 * 60 * 60 * 1000;
+// Para que refleje cambios del sitio con más rapidez.
+// Igual podés forzar desde Cartilla/Emergencias con pull-to-refresh.
+const STALE_MS = 30 * 60 * 1000;
 
 type HesmRemoteState = {
   whatsappDigits: string | null;
@@ -40,7 +42,7 @@ export const useHesmRemoteStore = create<HesmRemoteState>()(
 
         set({ isSyncing: true, lastSyncError: null });
         try {
-          const r = await syncHesmFromPublicWeb();
+          const r = await syncHesmFromPublicWeb({ cacheBust: !!force });
           set({
             whatsappDigits: r.whatsappDigits,
             phoneDisplay: r.phoneDisplay,

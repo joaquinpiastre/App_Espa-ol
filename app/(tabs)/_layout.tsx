@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Tabs } from "expo-router";
-import { useRouter } from "expo-router";
-import { Home, Stethoscope, ShieldAlert, Handshake, User } from "lucide-react-native";
+import { Tabs, useRouter } from "expo-router";
+import { Home, Stethoscope, ShieldAlert, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuthStore } from "../../src/state/useAuthStore";
+import { useAuthStore, useCurrentUser } from "../../src/state/useAuthStore";
 import { theme } from "../../src/theme/theme";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useCurrentUser();
 
   const [hydrated, setHydrated] = useState(false);
 
@@ -32,23 +32,35 @@ export default function TabsLayout() {
     if (!isAuthenticated) router.replace("/(auth)/login");
   }, [hydrated, isAuthenticated, router]);
 
-  const tabIcon = (IconComponent: React.ComponentType<any>) => ({
-    color,
-    size,
-    focused,
-  }: {
-    color: string;
-    size: number;
-    focused: boolean;
-  }) => (
-    <IconComponent
-      color={focused ? theme.colors.primary : theme.colors.textMuted}
-      size={focused ? size + 1 : size}
-      strokeWidth={focused ? 2.4 : 2}
-    />
-  );
+  const tabIcon = (IconComponent: React.ComponentType<any>) => {
+    function TabBarIcon({
+      color,
+      size,
+      focused,
+    }: {
+      color: string;
+      size: number;
+      focused: boolean;
+    }) {
+      return (
+        <IconComponent
+          color={focused ? theme.colors.primary : theme.colors.textMuted}
+          size={focused ? size + 1 : size}
+          strokeWidth={focused ? 2.4 : 2}
+        />
+      );
+    }
+    const name =
+      (IconComponent as { displayName?: string; name?: string }).displayName ??
+      (IconComponent as { name?: string }).name ??
+      "Icon";
+    TabBarIcon.displayName = `TabBarIcon(${name})`;
+    return TabBarIcon;
+  };
 
   const tabBarBottomPad = Math.max(insets.bottom, 10);
+  const hideEmergenciasTab = user?.role === "invitado";
+  const hideCartillaTab = user?.role === "invitado";
 
   return (
     <Tabs
@@ -83,24 +95,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="cartilla"
-        options={{
-          title: "Cartilla",
-          tabBarIcon: tabIcon(Stethoscope),
-        }}
-      />
-      <Tabs.Screen
         name="emergencias"
         options={{
           title: "Emergencias",
+          href: hideEmergenciasTab ? null : undefined,
           tabBarIcon: tabIcon(ShieldAlert),
         }}
       />
       <Tabs.Screen
-        name="prestadores"
+        name="cartilla"
         options={{
-          title: "Prestadores",
-          tabBarIcon: tabIcon(Handshake),
+          title: "Cartilla",
+          href: hideCartillaTab ? null : undefined,
+          tabBarIcon: tabIcon(Stethoscope),
         }}
       />
       <Tabs.Screen

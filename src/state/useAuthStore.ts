@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 import { STORAGE_KEYS } from "../constants/storageKeys";
-import type { AuthSession, AuthUser } from "../types/auth";
+import type { AuthSession, AuthUser, AuthUserRole } from "../types/auth";
 
 type AuthState = {
   session: AuthSession | null;
@@ -45,8 +45,17 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Hook auxiliar para leer el usuario actual.
+/** Migra sesiones viejas sin `role` y normaliza invitado/socio. */
+export function normalizeAuthUser(user: AuthUser): AuthUser {
+  const inferred: AuthUserRole =
+    user.role ?? (user.nroSocio != null && user.nroSocio !== "" ? "socio" : "invitado");
+  if (user.role === inferred) return user;
+  return { ...user, role: inferred };
+}
+
 export function useCurrentUser() {
   const session = useAuthStore((s) => s.session);
-  return session?.user ?? null;
+  const u = session?.user ?? null;
+  return u ? normalizeAuthUser(u) : null;
 }
 
