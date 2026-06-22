@@ -5,9 +5,11 @@ export const HESM_CONFIG = {
   name: "Hospital Español del Sur Mendocino",
   address: "Av. El Libertador 950, San Rafael, Mendoza",
   phonePrincipal: "(260) 408 0000",
-  /** Línea pública de emergencias (San Rafael, Mendoza) */
+  /** Línea pública de ambulancia / servicio de ambulancia (San Rafael, Mendoza) */
   sanRafaelEmergenciasDisplay: "(260) 443 7000",
   sanRafaelEmergenciasTel: "+542604437000",
+  /** Etiqueta en pantalla Emergencias para la línea sanRafaelEmergenciasDisplay */
+  sanRafaelAmbulanciaLabel: "Servicio de ambulancia",
   email: "info@hesm.org",
   guardiaLabel: "Guardia 24 hs",
   websiteUrl: "https://www.hesm.org/",
@@ -49,6 +51,13 @@ export const HESM_CONFIG = {
     "Farmacia",
   ],
 };
+
+/** URLs de páginas legales de la app (desplegadas en hesm-legal.vercel.app) */
+export const HESM_LEGAL_URLS = {
+  privacidad: "https://hesm-legal.vercel.app/privacidad.html",
+  terminos: "https://hesm-legal.vercel.app/terminos.html",
+  eliminarCuenta: "https://hesm.org/eliminar-cuenta",
+} as const;
 
 /** Imágenes oficiales del sitio (hesm.org) para branding en la app */
 export const HESM_REMOTE_ASSETS = {

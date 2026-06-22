@@ -1,16 +1,11 @@
 import type { AuthUser } from "../types/auth";
 import { findSocioByCredentials, normalizeDniInput, normalizeSocioInput } from "../data/sociosLookup";
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+import { findSocioRemote } from "./sociosSupabaseService";
 
 export async function loginSocios(params: {
   dni: string;
   numeroSocio: string;
 }): Promise<{ user: AuthUser }> {
-  await sleep(400);
-
   const dniTrim = params.dni.trim();
   const socioTrim = params.numeroSocio.trim();
 
@@ -23,7 +18,14 @@ export async function loginSocios(params: {
   if (!dniNorm) throw new Error("El DNI no es válido (debe tener entre 6 y 10 dígitos).");
   if (!socioNorm) throw new Error("El número de socio no es válido.");
 
-  const socio = findSocioByCredentials(dniTrim, socioTrim);
+  // 1. Buscar en Supabase (con fallback a caché offline)
+  let socio = await findSocioRemote(dniTrim, socioTrim);
+
+  // 2. Último recurso: datos locales empaquetados en la app
+  if (!socio) {
+    socio = findSocioByCredentials(dniTrim, socioTrim);
+  }
+
   if (!socio) {
     throw new Error("DNI o número de socio incorrectos. Verificá los datos o contactá al hospital.");
   }
@@ -45,7 +47,6 @@ export async function loginSocios(params: {
 
 /** Acceso sin credencial: funciones institucionales limitadas */
 export async function loginInvitado(): Promise<{ user: AuthUser }> {
-  await sleep(280);
   const user: AuthUser = {
     id: "hesm_invitado",
     role: "invitado",
@@ -55,7 +56,6 @@ export async function loginInvitado(): Promise<{ user: AuthUser }> {
   return { user };
 }
 
-/** Nombre legible: primera letra de cada palabra en mayúscula */
 function toTitleCaseName(name: string) {
   return name
     .toLowerCase()

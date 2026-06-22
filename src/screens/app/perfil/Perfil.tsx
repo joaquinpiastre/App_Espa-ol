@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Alert, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import { CreditCard, LogIn, LogOut, Mail, MessageCircle, Phone, ShieldCheck, UserRound } from "lucide-react-native";
+import { CreditCard, LogIn, LogOut, Mail, MessageCircle, Phone, ShieldCheck, Trash2, UserRound } from "lucide-react-native";
 
 import { Screen } from "../../../components/app/Screen";
 import { Card } from "../../../components/ui/Card";
@@ -10,7 +10,7 @@ import { Button } from "../../../components/ui/Button";
 import { SectionTitle } from "../../../components/ui/SectionTitle";
 import { theme } from "../../../theme/theme";
 import { useCurrentUser, useAuthStore } from "../../../state/useAuthStore";
-import { HESM_CONFIG, APP_CONFIG } from "../../../constants/appConfig";
+import { HESM_CONFIG, APP_CONFIG, HESM_LEGAL_URLS } from "../../../constants/appConfig";
 import { useHesmContacts } from "../../../state/useHesmRemoteStore";
 import { InfoRow } from "../../../components/ui/InfoRow";
 import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, openUrl } from "../../../utils/links";
@@ -75,6 +75,25 @@ export function Perfil() {
     if (!opened) {
       Alert.alert("WhatsApp", "No se pudo abrir WhatsApp. Verificá que esté instalado o probá más tarde.");
     }
+  }
+
+  function onEliminarCuenta() {
+    Alert.alert(
+      "Eliminar mi cuenta",
+      "Vas a ser redirigido a un formulario web para solicitar la eliminación de tu cuenta. ¿Continuar?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Continuar",
+          onPress: async () => {
+            const opened = await openUrl(HESM_LEGAL_URLS.eliminarCuenta);
+            if (!opened) {
+              Alert.alert("No se pudo abrir el enlace", "Verificá tu conexión o probá desde el navegador.");
+            }
+          },
+        },
+      ]
+    );
   }
 
   async function onPagarCuota() {
@@ -290,6 +309,35 @@ export function Perfil() {
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: theme.spacing.sm }}>
             Versión de la app: {appVersion}
           </Text>
+        </View>
+
+        <View style={{ gap: theme.spacing.sm }}>
+          <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>Legal</Text>
+          <View style={{ flexDirection: "row", gap: theme.spacing.md, flexWrap: "wrap" }}>
+            <View style={{ flex: 1, minWidth: 160 }}>
+              <Button
+                title="Política de privacidad"
+                variant="secondary"
+                size="md"
+                onPress={() => openUrl(HESM_LEGAL_URLS.privacidad)}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 160 }}>
+              <Button
+                title="Términos y condiciones"
+                variant="secondary"
+                size="md"
+                onPress={() => openUrl(HESM_LEGAL_URLS.terminos)}
+              />
+            </View>
+          </View>
+          <Button
+            title="Eliminar mi cuenta"
+            variant="secondary"
+            size="md"
+            onPress={onEliminarCuenta}
+            iconLeft={<Trash2 size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />}
+          />
         </View>
 
         <Button

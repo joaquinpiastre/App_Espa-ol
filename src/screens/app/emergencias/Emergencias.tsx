@@ -81,7 +81,7 @@ export function Emergencias() {
 
           <InfoRow label="Teléfono" value={phonePrincipal} icon={<Phone size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />} />
           <InfoRow
-            label="Emergencias San Rafael"
+            label={HESM_CONFIG.sanRafaelAmbulanciaLabel}
             value={HESM_CONFIG.sanRafaelEmergenciasDisplay}
             icon={<Phone size={16} color={theme.colors.primaryDark} strokeWidth={2.2} />}
           />
@@ -154,7 +154,7 @@ export function Emergencias() {
             </View>
             <View style={{ flex: 1, minWidth: 170 }}>
               <Button
-                title="Emergencias San Rafael"
+                title={HESM_CONFIG.sanRafaelAmbulanciaLabel}
                 variant="secondary"
                 size="lg"
                 iconLeft={<Phone size={18} color={theme.colors.primaryDark} strokeWidth={2.2} />}

@@ -40,7 +40,10 @@
     },
     "ios": {
       "bundleIdentifier": "com.hesm.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": []
+      }
     },
     "web": {
       "bundler": "metro"
