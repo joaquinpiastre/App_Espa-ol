@@ -1,6 +1,9 @@
 /** Respaldo si aún no hubo sync con hesm.org (se pisa con datos de /contacto/) */
 export const HESM_WHATSAPP_NUMBER = "5492604080000";
 
+/** WhatsApp directo del sector Socios (consultas para asociarse), no se pisa con el sync de hesm.org */
+export const HESM_SOCIOS_WHATSAPP_NUMBER = "5492604353792";
+
 export const HESM_CONFIG = {
   name: "Hospital Español del Sur Mendocino",
   address: "Av. El Libertador 950, San Rafael, Mendoza",
@@ -11,10 +14,12 @@ export const HESM_CONFIG = {
   /** Etiqueta en pantalla Emergencias para la línea sanRafaelEmergenciasDisplay */
   sanRafaelAmbulanciaLabel: "Servicio de ambulancia",
   email: "info@hesm.org",
+  /** Correo específico para consultas de asociados (socios) */
+  sociosEmail: "socios@hesm.org",
   guardiaLabel: "Guardia 24 hs",
   websiteUrl: "https://www.hesm.org/",
-  instagramUrl: "https://www.hesm.org/", // TODO: reemplazar por el link oficial de Instagram
-  facebookUrl: "https://www.hesm.org/", // TODO: reemplazar por el link oficial de Facebook
+  instagramUrl: "https://www.instagram.com/hospitalespanol.hesm/",
+  facebookUrl: "https://www.facebook.com/profile.php?id=100030965362668",
   /**
    * Entrada al pago de cuotas (mismo enlace para todos los socios; cada uno completa sus datos en Mercado Pago).
    * Si deja de abrirse, generá un link nuevo en MP y reemplazá la URL (session_id / journey suelen caducar).
@@ -52,10 +57,9 @@ export const HESM_CONFIG = {
   ],
 };
 
-/** URLs de páginas legales de la app (desplegadas en hesm-legal.vercel.app) */
 export const HESM_LEGAL_URLS = {
-  privacidad: "https://hesm-legal.vercel.app/privacidad.html",
-  terminos: "https://hesm-legal.vercel.app/terminos.html",
+  privacidad: "https://hesm.org/privacidad/",
+  terminos: "https://hesm.org/terminos/",
   eliminarCuenta: "https://hesm.org/eliminar-cuenta",
 } as const;
 

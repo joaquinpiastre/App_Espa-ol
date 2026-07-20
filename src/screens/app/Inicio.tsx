@@ -13,6 +13,7 @@ import {
   Pill,
   Network,
   MessageCircle,
+  IdCard,
 } from "lucide-react-native";
 
 import { Screen } from "../../components/app/Screen";
@@ -23,7 +24,7 @@ import { SectionTitle } from "../../components/ui/SectionTitle";
 import { theme } from "../../theme/theme";
 import { novedadesMock } from "../../mock-data/novedades";
 import { useCurrentUser } from "../../state/useAuthStore";
-import { HESM_CONFIG, APP_CONFIG } from "../../constants/appConfig";
+import { HESM_CONFIG, APP_CONFIG, HESM_SOCIOS_WHATSAPP_NUMBER } from "../../constants/appConfig";
 import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, makeEmailUrl, openUrl } from "../../utils/links";
 import { useHesmContacts } from "../../state/useHesmRemoteStore";
 
@@ -35,11 +36,13 @@ export function Inicio() {
   const isInvitado = user?.role === "invitado";
 
   const onHacermeSocioWhatsApp = useCallback(async () => {
-    const ok = await openUrl(makeWhatsAppUrl(whatsappNumber, APP_CONFIG.guestBecomeMemberWhatsAppMessage));
+    const ok = await openUrl(
+      makeWhatsAppUrl(HESM_SOCIOS_WHATSAPP_NUMBER, APP_CONFIG.guestBecomeMemberWhatsAppMessage)
+    );
     if (!ok) {
       Alert.alert("WhatsApp", "No se pudo abrir WhatsApp. Verificá que esté instalado.");
     }
-  }, [whatsappNumber]);
+  }, []);
 
   const quickGrid = useMemo(() => {
     const emergenciasItem = {
@@ -66,6 +69,12 @@ export function Inicio() {
       onPress: () => router.push("/redes-sociales"),
       subtitle: "Instagram, Facebook y sitio",
     };
+    const carnetItem = {
+      label: "Carnet Digital",
+      icon: <IdCard size={22} color={theme.colors.primaryDark} strokeWidth={2.2} />,
+      onPress: () => router.push("/carnet"),
+      subtitle: "Tu credencial de socio",
+    };
     if (isInvitado) {
       const hacermeSocio = {
         label: "Hacerme socio",
@@ -75,7 +84,7 @@ export function Inicio() {
       };
       return [redesItem, hacermeSocio];
     }
-    return [emergenciasItem, cartillaItem, farmaciasItem, redesItem];
+    return [emergenciasItem, carnetItem, cartillaItem, farmaciasItem, redesItem];
   }, [isInvitado, router, onHacermeSocioWhatsApp]);
 
   const featured = useMemo(() => {
@@ -200,7 +209,7 @@ export function Inicio() {
           kicker="NAVEGACIÓN"
           title="Accesos rápidos"
           subtitle={
-            isInvitado ? "Redes sociales y cómo consultar por WhatsApp para asociarte." : "Emergencias primero; después cartilla, farmacias y redes."
+            isInvitado ? "Redes sociales y cómo consultar por WhatsApp para asociarte." : "Emergencias primero; después carnet digital, cartilla, farmacias y redes."
           }
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md }}>

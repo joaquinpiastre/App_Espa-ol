@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+import * as XLSX from "xlsx";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY as string;
@@ -40,24 +41,42 @@ function cleanCell(raw: string): string {
   return t.replace(/\s+/g, " ");
 }
 
-function parseFileContent(text: string): SocioRow[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+function toStr(raw: unknown): string {
+  if (raw === null || raw === undefined) return "";
+  return String(raw).trim();
+}
+
+// Lee el .xls/.xlsx real (binario) y mapea columnas por nombre de encabezado,
+// ya que el export de socios trae NROSOCIO;TIPO;NOMBRE;DOMICILIO;NRODOC;TELEFONO;PLAN_NUEVO;CTAS_DEBE
+function parseWorkbook(data: ArrayBuffer): SocioRow[] {
+  const wb = XLSX.read(data, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  if (!rows.length) return [];
+
+  const header = (rows[0] as unknown[]).map((h) => toStr(h).toUpperCase());
+  const idx = (name: string) => header.indexOf(name);
+
+  const colSocio = idx("NROSOCIO");
+  const colNombre = idx("NOMBRE");
+  const colDomicilio = idx("DOMICILIO");
+  const colDoc = idx("NRODOC");
+  const colPlan = idx("PLAN_NUEVO");
+  const colCtasDebe = idx("CTAS_DEBE");
+
+  if (colSocio === -1 || colNombre === -1 || colDoc === -1) return [];
+
   const records: SocioRow[] = [];
   const seen = new Set<string>();
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (i === 0 && /NROSOCIO/i.test(line) && /NRODOC/i.test(line)) continue;
-
-    const cols = line.split(";");
-    if (cols.length < 11) continue;
-
-    const nroSocioRaw = cols[0]?.trim() ?? "";
-    const nombre = (cols[2] ?? "").trim();
-    const domicilioRaw = cols[3] ?? "";
-    const nroDocRaw = cols[4]?.trim() ?? "";
-    const planNuevo = (cols[7] ?? "").trim();
-    const ctasDebeRaw = cols[10] ?? "";
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const nroSocioRaw = toStr(row[colSocio]);
+    const nombre = toStr(row[colNombre]);
+    const domicilioRaw = colDomicilio !== -1 ? toStr(row[colDomicilio]) : "";
+    const nroDocRaw = toStr(row[colDoc]);
+    const planNuevo = colPlan !== -1 ? toStr(row[colPlan]) : "";
+    const ctasDebeRaw = colCtasDebe !== -1 ? toStr(row[colCtasDebe]) : "";
 
     const dniNorm = normalizeDoc(nroDocRaw);
     const nroSocioNorm = normalizeSocio(nroSocioRaw);
@@ -135,9 +154,8 @@ export default function App() {
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
     reader.onload = (ev) => {
-      const bytes = new Uint8Array(ev.target!.result as ArrayBuffer);
-      const text = new TextDecoder("latin1").decode(bytes);
-      const parsed = parseFileContent(text);
+      const buffer = ev.target!.result as ArrayBuffer;
+      const parsed = parseWorkbook(buffer);
       setRecords(parsed);
     };
   }

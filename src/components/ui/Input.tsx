@@ -18,6 +18,9 @@ export type InputProps = {
   secureTextEntry?: boolean;
   keyboardType?: "email-address" | "default" | "numeric";
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  autoComplete?: "off" | "username" | "password" | "email" | "name" | "tel" | "street-address" | "postal-code" | "cc-number" | "cc-csc" | "cc-exp" | "cc-exp-month" | "cc-exp-year";
+  importantForAutofill?: "auto" | "no" | "noExcludeDescendants" | "yes" | "yesExcludeDescendants";
+  textContentType?: "none" | "URL" | "addressCity" | "addressCityAndState" | "addressState" | "countryName" | "creditCardNumber" | "emailAddress" | "familyName" | "fullStreetAddress" | "givenName" | "jobTitle" | "location" | "middleName" | "name" | "namePrefix" | "nameSuffix" | "nickname" | "organizationName" | "postalCode" | "streetAddressLine1" | "streetAddressLine2" | "sublocality" | "telephoneNumber" | "username" | "password" | "newPassword" | "oneTimeCode";
   error?: string | null;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -32,6 +35,9 @@ export function Input({
   secureTextEntry,
   keyboardType = "default",
   autoCapitalize = "none",
+  autoComplete,
+  importantForAutofill,
+  textContentType,
   error,
   style,
   accessibilityLabel,
@@ -85,6 +91,9 @@ export function Input({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType === "numeric" ? "number-pad" : keyboardType}
           autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
+          importantForAutofill={importantForAutofill}
+          textContentType={textContentType}
           style={styles.input}
         />
       </View>

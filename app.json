@@ -34,8 +34,8 @@
     "android": {
       "package": "com.hesm.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#E6FAFA"
+        "foregroundImage": "./assets/icon-adaptive-foreground.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "ios": {

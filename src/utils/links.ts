@@ -9,9 +9,7 @@ export function makeTelUrl(phone: string) {
 }
 
 export function makeMapsUrl(query: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    query
-  )}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 export function makeEmailUrl(email: string) {
@@ -19,15 +17,20 @@ export function makeEmailUrl(email: string) {
 }
 
 export function makeWhatsAppUrl(phoneNumber: string, message?: string) {
-  const base = `https://wa.me/${digitsOnly(phoneNumber)}`;
+  const phone = digitsOnly(phoneNumber).replace(/^\+/, "");
+  const base = `https://wa.me/${phone}`;
   if (!message) return base;
   return `${base}?text=${encodeURIComponent(message)}`;
 }
 
+// canOpenURL en Android 11+ devuelve false para tel:, mailto:, whatsapp:// etc.
+// si no están declarados en <queries> del Manifest — aunque el handler exista.
+// Llamamos openURL directamente y capturamos el error para no bloquear la navegación.
 export async function openUrl(url: string) {
-  const supported = await Linking.canOpenURL(url);
-  if (!supported) return false;
-  await Linking.openURL(url);
-  return true;
+  try {
+    await Linking.openURL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
-

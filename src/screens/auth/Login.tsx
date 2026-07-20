@@ -200,6 +200,9 @@ export function Login() {
                   keyboardType="numeric"
                   error={errors.dni?.message}
                   accessibilityLabel="DNI"
+                  autoComplete="off"
+                  importantForAutofill="no"
+                  textContentType="none"
                 />
               )}
             />
@@ -218,6 +221,9 @@ export function Login() {
                   keyboardType="default"
                   error={errors.numeroSocio?.message}
                   accessibilityLabel="Número de socio"
+                  autoComplete="off"
+                  importantForAutofill="no"
+                  textContentType="none"
                 />
               )}
             />
@@ -278,7 +284,7 @@ export function Login() {
                 </Text>
               </Pressable>
               <Text style={{ color: theme.colors.textMuted, fontWeight: "600", fontSize: 12, textAlign: "center" }}>
-                {HESM_CONFIG.email}
+                {HESM_CONFIG.sociosEmail}
               </Text>
             </View>
 

@@ -50,7 +50,7 @@ export function CartillaMedica() {
         : true;
 
       return matchesSpecialty && matchesProfessional && matchesSearch;
-    });
+    }).sort((a, b) => a.name.localeCompare(b.name, "es"));
   }, [professionalQuery, professionals, search, specialty]);
 
   function whatsappFor(p: Professional) {

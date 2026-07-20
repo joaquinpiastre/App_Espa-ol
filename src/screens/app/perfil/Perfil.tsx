@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Alert, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import { CreditCard, LogIn, LogOut, Mail, MessageCircle, Phone, ShieldCheck, Trash2, UserRound } from "lucide-react-native";
+import { CreditCard, IdCard, LogIn, LogOut, Mail, MessageCircle, Phone, ShieldCheck, Trash2, UserRound } from "lucide-react-native";
 
 import { Screen } from "../../../components/app/Screen";
 import { Card } from "../../../components/ui/Card";
@@ -10,7 +10,7 @@ import { Button } from "../../../components/ui/Button";
 import { SectionTitle } from "../../../components/ui/SectionTitle";
 import { theme } from "../../../theme/theme";
 import { useCurrentUser, useAuthStore } from "../../../state/useAuthStore";
-import { HESM_CONFIG, APP_CONFIG, HESM_LEGAL_URLS } from "../../../constants/appConfig";
+import { HESM_CONFIG, APP_CONFIG, HESM_LEGAL_URLS, HESM_SOCIOS_WHATSAPP_NUMBER } from "../../../constants/appConfig";
 import { useHesmContacts } from "../../../state/useHesmRemoteStore";
 import { InfoRow } from "../../../components/ui/InfoRow";
 import { makeMapsUrl, makeTelUrl, makeWhatsAppUrl, openUrl } from "../../../utils/links";
@@ -19,7 +19,7 @@ export function Perfil() {
   const router = useRouter();
   const user = useCurrentUser();
   const signOut = useAuthStore((s) => s.signOut);
-  const { phonePrincipal, phoneForTel, whatsappNumber } = useHesmContacts();
+  const { phonePrincipal, phoneForTel } = useHesmContacts();
 
   const [notifications, setNotifications] = useState(true);
   const appVersion = useMemo(() => {
@@ -71,7 +71,9 @@ export function Perfil() {
   }
 
   async function onHacermeSocioWhatsApp() {
-    const opened = await openUrl(makeWhatsAppUrl(whatsappNumber, APP_CONFIG.guestBecomeMemberWhatsAppMessage));
+    const opened = await openUrl(
+      makeWhatsAppUrl(HESM_SOCIOS_WHATSAPP_NUMBER, APP_CONFIG.guestBecomeMemberWhatsAppMessage)
+    );
     if (!opened) {
       Alert.alert("WhatsApp", "No se pudo abrir WhatsApp. Verificá que esté instalado o probá más tarde.");
     }
@@ -225,6 +227,14 @@ export function Perfil() {
             {user?.domicilio ? <InfoRow label="Domicilio" value={user.domicilio} /> : null}
 
             <InfoRow label="Cuotas adeudadas (CTAS_DEBE)" value={cuotasAdeudadasTexto} />
+
+            <Button
+              title="Ver Carnet Digital"
+              variant="secondary"
+              size="lg"
+              onPress={() => router.push("/carnet")}
+              iconLeft={<IdCard size={18} color={theme.colors.primaryDark} strokeWidth={2.2} />}
+            />
 
             <View style={{ gap: theme.spacing.md, marginTop: theme.spacing.md }}>
               <Text style={{ ...theme.typography.h3, color: theme.colors.text }}>Pagar cuotas</Text>
