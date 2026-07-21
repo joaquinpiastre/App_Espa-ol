@@ -31,8 +31,7 @@ const HERO_BASE_H = 228;
 const loginSchema = z.object({
   dni: z
     .string()
-    .min(1, "Ingresá tu DNI.")
-    .refine((v) => normalizeDniInput(v) != null, "Ingresá un DNI válido (6 a 10 dígitos)."),
+    .refine((v) => v.trim() === "" || normalizeDniInput(v) != null, "Ingresá un DNI válido (6 a 10 dígitos)."),
   numeroSocio: z
     .string()
     .min(1, "Ingresá tu número de socio.")
@@ -183,7 +182,7 @@ export function Login() {
               </Text>
               <Text style={{ ...theme.typography.h2, color: theme.colors.text }}>Iniciar sesión</Text>
               <Text style={{ ...theme.typography.body2, color: theme.colors.textMuted }}>
-                Socios: DNI y número de socio. Sin credencial: Continuar como invitado más abajo.
+                Socios: DNI y número de socio. Si tu ficha no tiene DNI cargado, dejá ese campo vacío. Sin credencial: Continuar como invitado más abajo.
               </Text>
             </View>
 
@@ -192,7 +191,7 @@ export function Login() {
               name="dni"
               render={({ field: { value, onChange, onBlur } }) => (
                 <Input
-                  label="DNI"
+                  label="DNI (opcional si tu ficha no lo tiene cargado)"
                   placeholder="Ej: 8030193 o 8.030.193"
                   value={value}
                   onChangeText={onChange}

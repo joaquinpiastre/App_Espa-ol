@@ -1,6 +1,6 @@
 import type { AuthUser } from "../types/auth";
 import { findSocioByCredentials, normalizeDniInput, normalizeSocioInput } from "../data/sociosLookup";
-import { findSocioRemote } from "./sociosSupabaseService";
+import { findSocioRemote, findSocioRemoteSinDni } from "./sociosSupabaseService";
 
 export async function loginSocios(params: {
   dni: string;
@@ -9,21 +9,27 @@ export async function loginSocios(params: {
   const dniTrim = params.dni.trim();
   const socioTrim = params.numeroSocio.trim();
 
-  if (!dniTrim) throw new Error("Ingresá tu DNI.");
   if (!socioTrim) throw new Error("Ingresá tu número de socio.");
 
-  const dniNorm = normalizeDniInput(dniTrim);
   const socioNorm = normalizeSocioInput(socioTrim);
-
-  if (!dniNorm) throw new Error("El DNI no es válido (debe tener entre 6 y 10 dígitos).");
   if (!socioNorm) throw new Error("El número de socio no es válido.");
 
-  // 1. Buscar en Supabase (con fallback a caché offline)
-  let socio = await findSocioRemote(dniTrim, socioTrim);
+  let socio;
 
-  // 2. Último recurso: datos locales empaquetados en la app
-  if (!socio) {
-    socio = findSocioByCredentials(dniTrim, socioTrim);
+  if (!dniTrim) {
+    // Sin DNI: solo funciona para cuentas que no tienen DNI cargado en el padrón.
+    socio = await findSocioRemoteSinDni(socioTrim);
+  } else {
+    const dniNorm = normalizeDniInput(dniTrim);
+    if (!dniNorm) throw new Error("El DNI no es válido (debe tener entre 6 y 10 dígitos).");
+
+    // 1. Buscar en Supabase (con fallback a caché offline)
+    socio = await findSocioRemote(dniTrim, socioTrim);
+
+    // 2. Último recurso: datos locales empaquetados en la app
+    if (!socio) {
+      socio = findSocioByCredentials(dniTrim, socioTrim);
+    }
   }
 
   if (!socio) {

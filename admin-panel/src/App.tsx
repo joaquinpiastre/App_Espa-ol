@@ -11,7 +11,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 // ─── Parseo del archivo (misma lógica que build-socios-data.cjs) ───────────
 
 interface SocioRow {
-  dni_norm: string;
+  dni_norm: string | null;
   nro_socio_norm: string;
   nombre: string;
   nro_socio_display: string;
@@ -80,9 +80,10 @@ function parseWorkbook(data: ArrayBuffer): SocioRow[] {
 
     const dniNorm = normalizeDoc(nroDocRaw);
     const nroSocioNorm = normalizeSocio(nroSocioRaw);
-    if (!dniNorm || !nroSocioNorm || !nombre) continue;
+    if (!nroSocioNorm || !nombre) continue;
 
-    const key = `${dniNorm}|${nroSocioNorm}`;
+    // Sin DNI, el nro de socio es la única clave disponible para evitar duplicados.
+    const key = dniNorm ? `${dniNorm}|${nroSocioNorm}` : `nodni|${nroSocioNorm}`;
     if (seen.has(key)) continue;
     seen.add(key);
 

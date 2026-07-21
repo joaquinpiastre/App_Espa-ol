@@ -44,6 +44,44 @@ export async function findSocioRemote(
   }
 }
 
+/**
+ * Busca un socio solo por número de socio, sin DNI.
+ * Solo devuelve resultado si esa cuenta específica no tiene DNI cargado en el padrón
+ * (dni_norm IS NULL) — para el resto de los socios sigue exigiéndose el DNI.
+ */
+export async function findSocioRemoteSinDni(socioInput: string): Promise<SocioRecord | null> {
+  const socioNorm = normalizeSocioInput(socioInput);
+  if (!socioNorm) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("socios")
+      .select("dni_norm, nro_socio_norm, nombre, nro_socio_display, plan, domicilio, ctas_debe")
+      .eq("nro_socio_norm", socioNorm)
+      .is("dni_norm", null)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    const record = mapRow(data);
+    await AsyncStorage.setItem(CACHE_PREFIX + "nodni_" + socioNorm, JSON.stringify(record)).catch(() => null);
+    return record;
+  } catch {
+    return getFromCacheSinDni(socioNorm);
+  }
+}
+
+async function getFromCacheSinDni(socioNorm: string): Promise<SocioRecord | null> {
+  try {
+    const raw = await AsyncStorage.getItem(CACHE_PREFIX + "nodni_" + socioNorm);
+    if (!raw) return null;
+    return JSON.parse(raw) as SocioRecord;
+  } catch {
+    return null;
+  }
+}
+
 async function getFromCache(dniNorm: string, socioNorm: string): Promise<SocioRecord | null> {
   try {
     const raw = await AsyncStorage.getItem(CACHE_PREFIX + dniNorm);
